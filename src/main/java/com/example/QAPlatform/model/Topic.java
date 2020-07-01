@@ -14,6 +14,7 @@ public class Topic {
     @Id
     private String topicId;
     private String topic;
+    @Id
     private String subtopicId;
     private String subtopic;
 
