@@ -19,21 +19,11 @@ public class TopicController {
 
     @PostMapping("/topic")
     @ResponseBody
-    public void addTopic(@RequestBody Topic topic) {
-        manager.addTopic(topic);
+    public ResponseEntity<String> addTopic(@RequestBody Topic topic) {
+        return manager.addTopic(topic);
     }
 
-    @PostMapping("/subtopic")
-    @ResponseBody
-    public void addSubtopic(@RequestBody Topic topic){
-        manager.addSubtopic(topic);
-    }
     /*
-    @GetMapping("/tag/{id}")
-    @ResponseBody
-    public ArrayList<String> getAllTags(@PathVariable String id){
-        return manager.getAllTags(id);
-    }
 
     @DeleteMapping("/tag/{id}/{tag}")
     @ResponseBody

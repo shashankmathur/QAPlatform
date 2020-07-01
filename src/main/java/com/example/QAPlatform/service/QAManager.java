@@ -42,7 +42,7 @@ public class QAManager {
     CompanyDao companyDao;
 
     public ResponseEntity<String> postQuestion(QuestionInput input) {
-        if(input.getQuestionText().equals(null) || input.getTopicId().equals(null) ||input.getSubtopicId().equals(null)|| input.getUserId().equals(null)){
+        if(input.getQuestionText().equals(null) || input.getTopicId().equals(null) || input.getSubtopicId().equals(null)|| input.getUserId().equals(null)){
             return new ResponseEntity<>(
                     "One or more mandatory parameters are null",
                     HttpStatus.BAD_REQUEST
@@ -349,12 +349,6 @@ public class QAManager {
         }
 
 
-        /*filteredQuestionIdByDate.forEach(questionId ->{
-            FilterQuestionOutput temp = new FilterQuestionOutput();
-            temp.setQuestionId(questionId);
-            map.put(questionId,temp);
-        });*/
-
         //Filtered by likes
         List<QuestionLikes> questionLikesList = qlDao.findAll();
         ArrayList<String> filterQuestionIdByLikes = new ArrayList<>();
@@ -417,96 +411,9 @@ public class QAManager {
 
         Set<String> selectedQuestionId = new HashSet<>();
         ArrayList<FilterQuestionOutput> result = new ArrayList<>();
-
+        ArrayList<String> finalSelectedQuestionId = new ArrayList<>();
         if(tags == null && subtopics == null){
-
-            filteredQuestionIdByCompany.forEach(id->{
-
-                final int[] likes = {(int) questionLikesList.stream().filter(like -> like.getQuestionId().equals(id)).count()};
-
-
-
-                String question = questionDao.findById(id).get().getQuestion();
-                ArrayList<String> companyForQuestionId = new ArrayList<>();
-                for (QuestionCompanyMapping mapping : questionCompanyMappingList) {
-                    if (mapping.getQuestionId().equals(id)){
-                        companyForQuestionId.add(companyDao.findById(mapping.getCompanyId()).get().getCompanyName());
-                    }
-                }
-
-                ArrayList<String> tagsForQuestionId = new ArrayList<>();
-                tagsList.forEach(tag->{
-                    if(tag.getQuestionId().equals(id)){
-                        tagsForQuestionId.add(tag.getTag());
-                    }
-                });
-
-                List<Answer> answerList = answerDao.findAll();
-                final int[] maxLikes = {-1};
-                final String[] bestAnswer = {"Not yet found"};
-                /*
-                Iterator<Answer> it = answerList.iterator();
-                while(it.hasNext()){
-                    if(it.next().getQuestionId().equals(id)){
-
-
-                        List<AnswerLikes> answerLikesList = alDao.findAll();
-                        int totalLikes = 0;
-                        answerLikesList.for
-                        int totalLikes = (int) answerLikesList.stream().filter(answerLike -> answerLike.getAnswerId().equals(it.next().getAnswerId())).count();
-                        if( totalLikes > maxLikes[0]){
-                            bestAnswer[0] = it.next().getAnswer();
-                            maxLikes[0] = totalLikes;
-
-
-                        }
-
-
-                    }
-                }*/
-                System.out.println("Likes");
-                answerList.forEach(answer->{
-                    if(answer.getQuestionId().equals(id)){
-                        List<AnswerLikes> answerLikesList = alDao.findAll();
-                        int totalLikes = (int) answerLikesList.stream().filter(answerLike -> answerLike.getAnswerId().equals(answer.getAnswerId())).count();
-                        if( totalLikes > maxLikes[0]){
-                            bestAnswer[0] = answer.getAnswer();
-                            maxLikes[0] = totalLikes;
-                        }
-                    }
-                    System.out.println(bestAnswer[0]);
-                    System.out.println(maxLikes[0]);
-                });
-
-                FilterQuestionOutput temp = new FilterQuestionOutput();
-                temp.setLikes(likes[0]);
-                temp.setQuestionId(id);
-                temp.setQuestion(question);
-
-
-                String[] finalCompanies = new String[companyForQuestionId.size()];
-                Iterator<String> itCompany =  companyForQuestionId.iterator();
-                int i = 0;
-                while(itCompany.hasNext()){
-                    finalCompanies[i] = itCompany.next();
-                    i++;
-                }
-                temp.setCompanies(finalCompanies);
-
-                String[] finalTags = new String[tagsForQuestionId.size()];
-                Iterator<String> itTags =  tagsForQuestionId.iterator();
-                i = 0;
-                while(itTags.hasNext()){
-                    finalTags[i] = itTags.next();
-                    i++;
-                }
-                temp.setTags(finalTags);
-
-                temp.setMostLikedAnswer(bestAnswer[0]);
-
-                result.add(temp);
-
-            });
+            finalSelectedQuestionId = filteredQuestionIdByCompany;
         }else{
             if(tags != null){
                 filteredQuestionIdByTag.forEach(id->{
@@ -519,7 +426,77 @@ public class QAManager {
                     selectedQuestionId.add(id);
                 });
             }
+
+            Iterator it = selectedQuestionId.iterator();
+            while(it.hasNext()){
+                finalSelectedQuestionId.add((String)it.next());
+            }
+
         }
+
+        finalSelectedQuestionId.forEach(id->{
+            final int[] likes = {(int) questionLikesList.stream().filter(like -> like.getQuestionId().equals(id)).count()};
+
+
+
+            String question = questionDao.findById(id).get().getQuestion();
+            ArrayList<String> companyForQuestionId = new ArrayList<>();
+            for (QuestionCompanyMapping mapping : questionCompanyMappingList) {
+                if (mapping.getQuestionId().equals(id)){
+                    companyForQuestionId.add(companyDao.findById(mapping.getCompanyId()).get().getCompanyName());
+                }
+            }
+
+            ArrayList<String> tagsForQuestionId = new ArrayList<>();
+            tagsList.forEach(tag->{
+                if(tag.getQuestionId().equals(id)){
+                    tagsForQuestionId.add(tag.getTag());
+                }
+            });
+
+            List<Answer> answerList = answerDao.findAll();
+            final int[] maxLikes = {-1};
+            final String[] bestAnswer = {"zero answers found."};
+
+            answerList.forEach(answer->{
+                if(answer.getQuestionId().equals(id)){
+                    List<AnswerLikes> answerLikesList = alDao.findAll();
+                    int totalLikes = (int) answerLikesList.stream().filter(answerLike -> answerLike.getAnswerId().equals(answer.getAnswerId())).count();
+                    if( totalLikes > maxLikes[0]){
+                        bestAnswer[0] = answer.getAnswer();
+                        maxLikes[0] = totalLikes;
+                    }
+                }
+            });
+
+            FilterQuestionOutput temp = new FilterQuestionOutput();
+            temp.setLikes(likes[0]);
+            temp.setQuestionId(id);
+            temp.setQuestion(question);
+
+
+            String[] finalCompanies = new String[companyForQuestionId.size()];
+            Iterator<String> itCompany =  companyForQuestionId.iterator();
+            int i = 0;
+            while(itCompany.hasNext()){
+                finalCompanies[i] = itCompany.next();
+                i++;
+            }
+            temp.setCompanies(finalCompanies);
+
+            String[] finalTags = new String[tagsForQuestionId.size()];
+            Iterator<String> itTags =  tagsForQuestionId.iterator();
+            i = 0;
+            while(itTags.hasNext()){
+                finalTags[i] = itTags.next();
+                i++;
+            }
+            temp.setTags(finalTags);
+
+            temp.setMostLikedAnswer(bestAnswer[0]);
+
+            result.add(temp);
+        });
 
         FilterQuestionOutput[] finalResult = new FilterQuestionOutput[result.size()];
         Iterator<FilterQuestionOutput> it =  result.iterator();
@@ -534,4 +511,5 @@ public class QAManager {
                 HttpStatus.OK
         );
     }
+
 }
